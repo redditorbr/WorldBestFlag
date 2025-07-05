@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VotaBandeira - Qual a Bandeira Mais Bonita?</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .flag-container {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, opacity 0.3s;
+            cursor: pointer;
+        }
+        .flag-container:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .flag-image {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 3 / 2;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            background-color: #e5e7eb;
+        }
+        .disabled-flag {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #09f;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="app" class="container mx-auto p-4 max-w-4xl min-h-screen flex flex-col justify-center items-center">
+
+        <!-- Header -->
+        <header class="w-full text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">Vota<span class="text-blue-600">Bandeira</span></h1>
+            <p class="text-gray-600 mt-2">Ajude-nos a descobrir qual é a bandeira mais bonita do mundo!</p>
+        </header>
+
+        <!-- Loading State -->
+        <div id="loading-section" class="text-center p-10">
+            <div class="loading-spinner mx-auto"></div>
+            <p class="mt-4 text-gray-600">Conectando ao servidor e preparando as bandeiras...</p>
+        </div>
+
+        <!-- Demographic Form Section -->
+        <div id="demographic-section" class="w-full max-w-lg bg-white p-8 rounded-xl shadow-lg hidden">
+            <h2 class="text-2xl font-bold mb-2 text-center">Antes de começar...</h2>
+            <p class="text-center text-gray-600 mb-6">Suas informações são anônimas e nos ajudam a realizar uma pesquisa mais justa.</p>
+            <form id="demographic-form">
+                <div class="mb-4">
+                    <label for="country" class="block text-sm font-medium text-gray-700 mb-1">Qual seu país de origem?</label>
+                    <select id="country" name="country" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <option value="">Selecione seu país...</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="birthYear" class="block text-sm font-medium text-gray-700 mb-1">Ano de Nascimento (Opcional)</label>
+                    <input type="number" id="birthYear" name="birthYear" min="1920" max="2020" placeholder="Ex: 1995" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Gênero (Opcional)</label>
+                    <div class="flex justify-around">
+                        <label class="flex items-center"><input type="radio" name="gender" value="male" class="mr-2"> Masculino</label>
+                        <label class="flex items-center"><input type="radio" name="gender" value="female" class="mr-2"> Feminino</label>
+                        <label class="flex items-center"><input type="radio" name="gender" value="other" class="mr-2"> Outro</label>
+                        <label class="flex items-center"><input type="radio" name="gender" value="prefer_not_to_say" class="mr-2" checked> Não informar</label>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-md">Iniciar Votação</button>
+            </form>
+        </div>
+
+        <!-- Voting Section -->
+        <div id="voting-section" class="w-full hidden">
+            <div id="vote-intro" class="text-center bg-white p-6 rounded-xl shadow-lg mb-6">
+                <h3 class="text-xl font-semibold">Instruções</h3>
+                <p class="text-gray-600 mt-1">Clique na bandeira que você considera mais bonita. Você votará 20 vezes por sessão.</p>
+            </div>
+            <div class="text-center mb-4">
+                <p id="vote-counter" class="font-semibold text-lg"></p>
+            </div>
+            <div id="flag-pair-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
+                <!-- Flag 1 -->
+                <div id="flag1-container" class="flag-container bg-white p-4 rounded-xl shadow-md">
+                    <img id="flag1-img" src="" alt="Bandeira 1" class="flag-image">
+                    <h3 id="flag1-name" class="text-center mt-3 font-semibold text-lg"></h3>
+                </div>
+                <!-- Flag 2 -->
+                <div id="flag2-container" class="flag-container bg-white p-4 rounded-xl shadow-md">
+                    <img id="flag2-img" src="" alt="Bandeira 2" class="flag-image">
+                    <h3 id="flag2-name" class="text-center mt-3 font-semibold text-lg"></h3>
+                </div>
+            </div>
+            <div class="text-center mt-8">
+                 <button id="show-results-btn-during-vote" class="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors">Ver Resultados Parciais</button>
+            </div>
+        </div>
+        
+        <!-- End of Session / Results Section -->
+        <div id="results-section" class="w-full hidden">
+            <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+                <h2 class="text-3xl font-bold mb-4">Obrigado por votar!</h2>
+                <p class="text-gray-600 mb-6">Sua contribuição é muito importante. Veja os resultados ou vote novamente para melhorar o ranking.</p>
+                <div class="flex justify-center gap-4">
+                    <button id="view-full-results-btn" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors">Ver Ranking Completo</button>
+                    <button id="vote-again-btn" class="bg-green-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-600 transition-colors">Votar Novamente</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ranking Modal -->
+        <div id="ranking-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 hidden z-50">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-full max-h-[90vh] flex flex-col">
+                <div class="p-6 border-b flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Ranking de Bandeiras</h2>
+                    <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+                </div>
+                <div class="p-6">
+                    <label for="continent-filter" class="mr-2 font-medium">Filtrar por Continente:</label>
+                    <select id="continent-filter" class="p-2 border rounded-lg">
+                        <option value="Todos">Todos</option>
+                        <option value="África">África</option>
+                        <option value="Américas">Américas</option>
+                        <option value="Ásia">Ásia</option>
+                        <option value="Europa">Europa</option>
+                        <option value="Oceania">Oceania</option>
+                    </select>
+                </div>
+                <div class="overflow-y-auto flex-grow p-6">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-100 sticky top-0">
+                            <tr>
+                                <th class="p-3 font-semibold">#</th>
+                                <th class="p-3 font-semibold">Bandeira</th>
+                                <th class="p-3 font-semibold">País</th>
+                                <th class="p-3 font-semibold">Pontuação Elo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ranking-table-body">
+                            <!-- Rows will be inserted here by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, query, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- CONFIGURAÇÃO E DADOS ESTÁTICOS ---
+
+        // Configuração do Firebase (será preenchida pelo ambiente)
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vota-bandeira-app';
+
+        // Inicialização do Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Lista de países com código e continente
+        const countries = [
+            { code: 'af', name: 'Afeganistão', continent: 'Ásia' }, { code: 'za', name: 'África do Sul', continent: 'África' },
+            { code: 'al', name: 'Albânia', continent: 'Europa' }, { code: 'de', name: 'Alemanha', continent: 'Europa' },
+            { code: 'ad', name: 'Andorra', continent: 'Europa' }, { code: 'ao', name: 'Angola', continent: 'África' },
+            { code: 'sa', name: 'Arábia Saudita', continent: 'Ásia' }, { code: 'dz', name: 'Argélia', continent: 'África' },
+            { code: 'ar', name: 'Argentina', continent: 'Américas' }, { code: 'am', name: 'Armênia', continent: 'Ásia' },
+            { code: 'au', name: 'Austrália', continent: 'Oceania' }, { code: 'at', name: 'Áustria', continent: 'Europa' },
+            { code: 'az', name: 'Azerbaijão', continent: 'Ásia' }, { code: 'bs', name: 'Bahamas', continent: 'Américas' },
+            { code: 'bd', name: 'Bangladesh', continent: 'Ásia' }, { code: 'bb', name: 'Barbados', continent: 'Américas' },
+            { code: 'by', name: 'Bielorrússia', continent: 'Europa' }, { code: 'be', name: 'Bélgica', continent: 'Europa' },
+            { code: 'bo', name: 'Bolívia', continent: 'Américas' }, { code: 'ba', name: 'Bósnia e Herzegovina', continent: 'Europa' },
+            { code: 'bw', name: 'Botsuana', continent: 'África' }, { code: 'br', name: 'Brasil', continent: 'Américas' },
+            { code: 'bg', name: 'Bulgária', continent: 'Europa' }, { code: 'kh', name: 'Camboja', continent: 'Ásia' },
+            { code: 'cm', name: 'Camarões', continent: 'África' }, { code: 'ca', name: 'Canadá', continent: 'Américas' },
+            { code: 'kz', name: 'Cazaquistão', continent: 'Ásia' }, { code: 'cl', name: 'Chile', continent: 'Américas' },
+            { code: 'cn', name: 'China', continent: 'Ásia' }, { code: 'cy', name: 'Chipre', continent: 'Europa' },
+            { code: 'co', name: 'Colômbia', continent: 'Américas' }, { code: 'kr', name: 'Coreia do Sul', continent: 'Ásia' },
+            { code: 'ci', name: 'Costa do Marfim', continent: 'África' }, { code: 'cr', name: 'Costa Rica', continent: 'Américas' },
+            { code: 'hr', name: 'Croácia', continent: 'Europa' }, { code: 'cu', name: 'Cuba', continent: 'Américas' },
+            { code: 'dk', name: 'Dinamarca', continent: 'Europa' }, { code: 'eg', name: 'Egito', continent: 'África' },
+            { code: 'ae', name: 'Emirados Árabes Unidos', continent: 'Ásia' }, { code: 'ec', name: 'Equador', continent: 'Américas' },
+            { code: 'sk', name: 'Eslováquia', continent: 'Europa' }, { code: 'si', name: 'Eslovênia', continent: 'Europa' },
+            { code: 'es', name: 'Espanha', continent: 'Europa' }, { code: 'us', name: 'Estados Unidos', continent: 'Américas' },
+            { code: 'ee', name: 'Estônia', continent: 'Europa' }, { code: 'et', name: 'Etiópia', continent: 'África' },
+            { code: 'ph', name: 'Filipinas', continent: 'Ásia' }, { code: 'fi', name: 'Finlândia', continent: 'Europa' },
+            { code: 'fr', name: 'França', continent: 'Europa' }, { code: 'gh', name: 'Gana', continent: 'África' },
+            { code: 'gr', name: 'Grécia', continent: 'Europa' }, { code: 'gt', name: 'Guatemala', continent: 'Américas' },
+            { code: 'nl', name: 'Holanda', continent: 'Europa' }, { code: 'hu', name: 'Hungria', continent: 'Europa' },
+            { code: 'in', name: 'Índia', continent: 'Ásia' }, { code: 'id', name: 'Indonésia', continent: 'Ásia' },
+            { code: 'ir', name: 'Irã', continent: 'Ásia' }, { code: 'iq', name: 'Iraque', continent: 'Ásia' },
+            { code: 'ie', name: 'Irlanda', continent: 'Europa' }, { code: 'is', name: 'Islândia', continent: 'Europa' },
+            { code: 'il', name: 'Israel', continent: 'Ásia' }, { code: 'it', name: 'Itália', continent: 'Europa' },
+            { code: 'jm', name: 'Jamaica', continent: 'Américas' }, { code: 'jp', name: 'Japão', continent: 'Ásia' },
+            { code: 'lv', name: 'Letônia', continent: 'Europa' }, { code: 'lb', name: 'Líbano', continent: 'Ásia' },
+            { code: 'lt', name: 'Lituânia', continent: 'Europa' }, { code: 'lu', name: 'Luxemburgo', continent: 'Europa' },
+            { code: 'my', name: 'Malásia', continent: 'Ásia' }, { code: 'ma', name: 'Marrocos', continent: 'África' },
+            { code: 'mx', name: 'México', continent: 'Américas' }, { code: 'mz', name: 'Moçambique', continent: 'África' },
+            { code: 'np', name: 'Nepal', continent: 'Ásia' }, { code: 'ng', name: 'Nigéria', continent: 'África' },
+            { code: 'no', name: 'Noruega', continent: 'Europa' }, { code: 'nz', name: 'Nova Zelândia', continent: 'Oceania' },
+            { code: 'pa', name: 'Panamá', continent: 'Américas' }, { code: 'pk', name: 'Paquistão', continent: 'Ásia' },
+            { code: 'py', name: 'Paraguai', continent: 'Américas' }, { code: 'pe', name: 'Peru', continent: 'Américas' },
+            { code: 'pl', name: 'Polônia', continent: 'Europa' }, { code: 'pt', name: 'Portugal', continent: 'Europa' },
+            { code: 'qa', name: 'Catar', continent: 'Ásia' }, { code: 'gb', name: 'Reino Unido', continent: 'Europa' },
+            { code: 'cz', name: 'República Tcheca', continent: 'Europa' }, { code: 'ro', name: 'Romênia', continent: 'Europa' },
+            { code: 'ru', name: 'Rússia', continent: 'Europa' }, { code: 'rs', name: 'Sérvia', continent: 'Europa' },
+            { code: 'sg', name: 'Singapura', continent: 'Ásia' }, { code: 'sy', name: 'Síria', continent: 'Ásia' },
+            { code: 'se', name: 'Suécia', continent: 'Europa' }, { code: 'ch', name: 'Suíça', continent: 'Europa' },
+            { code: 'th', name: 'Tailândia', continent: 'Ásia' }, { code: 'tr', name: 'Turquia', continent: 'Ásia' },
+            { code: 'ua', name: 'Ucrânia', continent: 'Europa' }, { code: 'uy', name: 'Uruguai', continent: 'Américas' },
+            { code: 've', name: 'Venezuela', continent: 'Américas' }, { code: 'vn', name: 'Vietnã', continent: 'Ásia' }
+        ];
+
+        // Lista de exclusão de conflitos (manipulável)
+        const conflictPairs = [
+            ['Rússia', 'Ucrânia'],
+            ['Israel', 'Irã'],
+            ['Israel', 'Síria'],
+            ['Índia', 'Paquistão'],
+        ];
+
+        // --- VARIÁVEIS DE ESTADO DA APLICAÇÃO ---
+        let currentUser = null;
+        let userProfile = null;
+        let currentVoteCount = 0;
+        const maxVotesPerSession = 20;
+        let currentPair = [];
+        let allFlagsData = [];
+
+        // --- ELEMENTOS DA UI ---
+        const ui = {
+            loadingSection: document.getElementById('loading-section'),
+            demographicSection: document.getElementById('demographic-section'),
+            votingSection: document.getElementById('voting-section'),
+            resultsSection: document.getElementById('results-section'),
+            demographicForm: document.getElementById('demographic-form'),
+            countrySelect: document.getElementById('country'),
+            flagPairContainer: document.getElementById('flag-pair-container'),
+            flag1: {
+                container: document.getElementById('flag1-container'),
+                img: document.getElementById('flag1-img'),
+                name: document.getElementById('flag1-name'),
+            },
+            flag2: {
+                container: document.getElementById('flag2-container'),
+                img: document.getElementById('flag2-img'),
+                name: document.getElementById('flag2-name'),
+            },
+            voteCounter: document.getElementById('vote-counter'),
+            rankingModal: document.getElementById('ranking-modal'),
+            rankingTableBody: document.getElementById('ranking-table-body'),
+            closeModalBtn: document.getElementById('close-modal-btn'),
+            continentFilter: document.getElementById('continent-filter'),
+            viewFullResultsBtn: document.getElementById('view-full-results-btn'),
+            showResultsBtnDuringVote: document.getElementById('show-results-btn-during-vote'),
+            voteAgainBtn: document.getElementById('vote-again-btn'),
+        };
+
+        // --- LÓGICA PRINCIPAL ---
+
+        // Função para inicializar o banco de dados se estiver vazio
+        async function initializeDatabase() {
+            const flagsCollectionRef = collection(db, `artifacts/${appId}/public/data/flags`);
+            const snapshot = await getDocs(query(flagsCollectionRef, limit(1)));
+            if (snapshot.empty) {
+                console.log("Banco de dados de bandeiras vazio. Inicializando...");
+                const batch = writeBatch(db);
+                countries.forEach(country => {
+                    const flagRef = doc(flagsCollectionRef, country.code);
+                    batch.set(flagRef, {
+                        name: country.name,
+                        code: country.code,
+                        continent: country.continent,
+                        elo: 1500,
+                        appearances: 0,
+                    });
+                });
+                await batch.commit();
+                console.log("Banco de dados inicializado com sucesso.");
+            }
+        }
+        
+        // Carrega todos os dados das bandeiras para a memória
+        async function loadAllFlagsData() {
+            const flagsCollectionRef = collection(db, `artifacts/${appId}/public/data/flags`);
+            const snapshot = await getDocs(flagsCollectionRef);
+            allFlagsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        // Preenche o seletor de países
+        function populateCountrySelect() {
+            countries.sort((a, b) => a.name.localeCompare(b.name)).forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.name;
+                option.textContent = country.name;
+                ui.countrySelect.appendChild(option);
+            });
+        }
+
+        // Lógica de autenticação
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const userRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile`, 'data');
+                const userDoc = await getDoc(userRef);
+                if (userDoc.exists()) {
+                    userProfile = userDoc.data();
+                    showScreen('voting');
+                    startNewSession();
+                } else {
+                    showScreen('demographic');
+                }
+            } else {
+                // Tenta login com token customizado, se não, anônimo
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                         await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                         await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Erro na autenticação:", error);
+                    ui.loadingSection.innerHTML = '<p class="text-red-500">Erro ao conectar. Por favor, recarregue a página.</p>';
+                }
+            }
+        });
+
+        // Manipula o envio do formulário demográfico
+        ui.demographicForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(ui.demographicForm);
+            userProfile = {
+                country: formData.get('country'),
+                birthYear: formData.get('birthYear') || null,
+                gender: formData.get('gender'),
+            };
+            
+            const userRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile`, 'data');
+            await setDoc(userRef, userProfile);
+            
+            showScreen('voting');
+            startNewSession();
+        });
+
+        // Algoritmo de seleção de pares
+        function getFlagPair() {
+            // 1. Garante que cada bandeira apareça um número similar de vezes
+            const sortedFlags = [...allFlagsData].sort((a, b) => a.appearances - b.appearances);
+            const candidates = sortedFlags.slice(0, 40); // Pega as 40 menos vistas
+
+            let flag1, flag2;
+            let attempts = 0;
+            const maxAttempts = 100;
+
+            while (attempts < maxAttempts) {
+                attempts++;
+                // Pega dois candidatos aleatórios
+                flag1 = candidates[Math.floor(Math.random() * candidates.length)];
+                flag2 = candidates[Math.floor(Math.random() * candidates.length)];
+
+                // Validações
+                if (flag1.id === flag2.id) continue; // Não pode ser o mesmo país
+
+                // 2. Evita pares com histórico de conflito
+                const isConflict = conflictPairs.some(pair => 
+                    (pair[0] === flag1.name && pair[1] === flag2.name) ||
+                    (pair[1] === flag1.name && pair[0] === flag2.name)
+                );
+                if (isConflict) continue;
+
+                // 3. Prioriza pares de continentes diferentes
+                if (flag1.continent !== flag2.continent || attempts > maxAttempts / 2) {
+                    return [flag1, flag2];
+                }
+            }
+            // Fallback: se não encontrar um par ideal, retorna qualquer par válido
+            return [flag1, flag2];
+        }
+
+        // Inicia uma nova sessão de votação
+        function startNewSession() {
+            currentVoteCount = 0;
+            ui.resultsSection.classList.add('hidden');
+            ui.votingSection.classList.remove('hidden');
+            loadNextPair();
+        }
+
+        // Carrega o próximo par de bandeiras
+        function loadNextPair() {
+            if (currentVoteCount >= maxVotesPerSession) {
+                showScreen('results');
+                return;
+            }
+            currentVoteCount++;
+            ui.voteCounter.textContent = `Voto ${currentVoteCount} de ${maxVotesPerSession}`;
+            
+            ui.flagPairContainer.classList.add('disabled-flag');
+            currentPair = getFlagPair();
+            
+            const [flag1, flag2] = Math.random() > 0.5 ? [currentPair[0], currentPair[1]] : [currentPair[1], currentPair[0]];
+
+            ui.flag1.img.src = `https://flagcdn.com/w320/${flag1.id}.png`;
+            ui.flag1.img.alt = `Bandeira de ${flag1.name}`;
+            ui.flag1.name.textContent = flag1.name;
+            ui.flag1.container.dataset.flagId = flag1.id;
+
+            ui.flag2.img.src = `https://flagcdn.com/w320/${flag2.id}.png`;
+            ui.flag2.img.alt = `Bandeira de ${flag2.name}`;
+            ui.flag2.name.textContent = flag2.name;
+            ui.flag2.container.dataset.flagId = flag2.id;
+            
+            ui.flagPairContainer.classList.remove('disabled-flag');
+        }
+
+        // Manipula o clique em uma bandeira
+        async function handleVote(e) {
+            const chosenContainer = e.target.closest('.flag-container');
+            if (!chosenContainer || ui.flagPairContainer.classList.contains('disabled-flag')) return;
+
+            ui.flagPairContainer.classList.add('disabled-flag');
+
+            const winnerId = chosenContainer.dataset.flagId;
+            const loserId = (winnerId === currentPair[0].id) ? currentPair[1].id : currentPair[0].id;
+
+            const winner = allFlagsData.find(f => f.id === winnerId);
+            const loser = allFlagsData.find(f => f.id === loserId);
+
+            // Cálculo do Elo
+            const eloK = 32; // Fator K base
+            const expectedWinner = 1 / (1 + Math.pow(10, (loser.elo - winner.elo) / 400));
+            const expectedLoser = 1 - expectedWinner;
+
+            let kWinner = eloK;
+            let kLoser = eloK;
+
+            // Ajuste do Fator K baseado no viés nacional
+            if (userProfile.country === winner.name) {
+                kWinner = 8; // Voto nacionalista tem menos impacto
+            } else if (userProfile.country === loser.name) {
+                kWinner = 40; // Voto "antinacionalista" tem mais impacto
+                kLoser = 40;
+            }
+
+            const newWinnerElo = winner.elo + kWinner * (1 - expectedWinner);
+            const newLoserElo = loser.elo + kLoser * (0 - expectedLoser);
+
+            // Atualiza os dados locais primeiro para resposta rápida da UI
+            winner.elo = newWinnerElo;
+            loser.elo = newLoserElo;
+            winner.appearances++;
+            loser.appearances++;
+
+            // Atualiza no Firestore em lote
+            const batch = writeBatch(db);
+            const winnerRef = doc(db, `artifacts/${appId}/public/data/flags`, winnerId);
+            const loserRef = doc(db, `artifacts/${appId}/public/data/flags`, loserId);
+            
+            batch.update(winnerRef, { elo: newWinnerElo, appearances: winner.appearances });
+            batch.update(loserRef, { elo: newLoserElo, appearances: loser.appearances });
+            
+            await batch.commit();
+
+            // Carrega o próximo par
+            setTimeout(loadNextPair, 300);
+        }
+
+        ui.flag1.container.addEventListener('click', handleVote);
+        ui.flag2.container.addEventListener('click', handleVote);
+
+        // Lógica para mostrar/esconder o modal de ranking
+        async function showRankingModal() {
+            await displayRankings();
+            ui.rankingModal.classList.remove('hidden');
+        }
+
+        function hideRankingModal() {
+            ui.rankingModal.classList.add('hidden');
+        }
+        
+        // Exibe os rankings na tabela
+        async function displayRankings() {
+            const selectedContinent = ui.continentFilter.value;
+            
+            // Re-busca os dados para garantir que estão atualizados
+            await loadAllFlagsData();
+
+            const filteredFlags = allFlagsData.filter(flag => 
+                selectedContinent === 'Todos' || flag.continent === selectedContinent
+            );
+
+            filteredFlags.sort((a, b) => b.elo - a.elo);
+
+            ui.rankingTableBody.innerHTML = '';
+            if (filteredFlags.length === 0) {
+                ui.rankingTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">Nenhuma bandeira encontrada para este filtro.</td></tr>';
+                return;
+            }
+
+            filteredFlags.forEach((flag, index) => {
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="p-3 font-bold">${index + 1}</td>
+                    <td class="p-3"><img src="https://flagcdn.com/w40/${flag.id}.png" alt="Bandeira de ${flag.name}" class="h-6 rounded"></td>
+                    <td class="p-3">${flag.name}</td>
+                    <td class="p-3 font-semibold">${Math.round(flag.elo)}</td>
+                `;
+                ui.rankingTableBody.appendChild(row);
+            });
+        }
+        
+        ui.continentFilter.addEventListener('change', displayRankings);
+        ui.closeModalBtn.addEventListener('click', hideRankingModal);
+        ui.viewFullResultsBtn.addEventListener('click', showRankingModal);
+        ui.showResultsBtnDuringVote.addEventListener('click', showRankingModal);
+
+        // Botão para votar novamente
+        ui.voteAgainBtn.addEventListener('click', () => {
+            showScreen('voting');
+            startNewSession();
+        });
+
+        // Gerenciador de telas
+        function showScreen(screenName) {
+            ui.loadingSection.classList.add('hidden');
+            ui.demographicSection.classList.add('hidden');
+            ui.votingSection.classList.add('hidden');
+            ui.resultsSection.classList.add('hidden');
+
+            if (screenName === 'loading') ui.loadingSection.classList.remove('hidden');
+            if (screenName === 'demographic') ui.demographicSection.classList.remove('hidden');
+            if (screenName === 'voting') ui.votingSection.classList.remove('hidden');
+            if (screenName === 'results') ui.resultsSection.classList.remove('hidden');
+        }
+
+        // Função de inicialização da aplicação
+        async function main() {
+            showScreen('loading');
+            populateCountrySelect();
+            await initializeDatabase();
+            await loadAllFlagsData();
+            // A autenticação irá direcionar para a tela correta
+        }
+
+        // Inicia a aplicação
+        main();
+
+    </script>
+</body>
+</html>
