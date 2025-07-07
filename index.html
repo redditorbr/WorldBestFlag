@@ -175,21 +175,30 @@
 
     <!-- Firebase SDK -->
     <script type="module">
-        // Importações do Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
         import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, query, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // --- CONFIGURAÇÃO E DADOS ESTÁTICOS ---
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-        // Configuração do Firebase (será preenchida pelo ambiente)
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vota-bandeira-app';
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDaHOfBH6rgfkvaRLHELT6lMN-pS10g9iI",
+    authDomain: "world-best-flag.firebaseapp.com",
+    projectId: "world-best-flag",
+    storageBucket: "world-best-flag.firebasestorage.app",
+    messagingSenderId: "195361723674",
+    appId: "1:195361723674:web:7e646b9f86493d891548a3",
+    measurementId: "G-1K436JFERM"
+  };
 
-        // Inicialização do Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
 
         // Lista de países com código e continente
  const countries = [
@@ -460,6 +469,8 @@
         const maxVotesPerSession = 20;
         let currentPair = [];
         let allFlagsData = [];
+        const auth = getAuth(app);
+        
 
         // --- ELEMENTOS DA UI ---
         const ui = {
