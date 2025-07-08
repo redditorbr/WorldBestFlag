@@ -1,0 +1,615 @@
+ // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, query, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDaHOfBH6rgfkvaRLHELT6lMN-pS10g9iI",
+    authDomain: "world-best-flag.firebaseapp.com",
+    projectId: "world-best-flag",
+    storageBucket: "world-best-flag.firebasestorage.app",
+    messagingSenderId: "195361723674",
+    appId: "1:195361723674:web:7e646b9f86493d891548a3",
+  };
+
+  // Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+  
+
+        // Lista de países com código e continente
+ const countries = [
+    { code: 'aq', name: 'Antártida', image: 'https://flagcdn.com/16x12/aq.png', continent: 'Antártida' },
+    { code: 'af', name: 'Afeganistão', image: 'https://flagcdn.com/16x12/af.png', continent: 'Ásia' },
+    { code: 'za', name: 'África do Sul', image: 'https://flagcdn.com/16x12/za.png', continent: 'África' },
+    { code: 'al', name: 'Albânia', image: 'https://flagcdn.com/16x12/al.png', continent: 'Europa' },
+    { code: 'de', name: 'Alemanha', image: 'https://flagcdn.com/16x12/de.png', continent: 'Europa' },
+    { code: 'ad', name: 'Andorra', image: 'https://flagcdn.com/16x12/ad.png', continent: 'Europa' },
+    { code: 'ao', name: 'Angola', image: 'https://flagcdn.com/16x12/ao.png', continent: 'África' },
+    { code: 'ai', name: 'Anguilla', image: 'https://flagcdn.com/16x12/ai.png', continent: 'Américas' },
+    { code: 'ag', name: 'Antígua e Barbuda', image: 'https://flagcdn.com/16x12/ag.png', continent: 'Américas' },
+    { code: 'sa', name: 'Arábia Saudita', image: 'https://flagcdn.com/16x12/sa.png', continent: 'Ásia' },
+    { code: 'dz', name: 'Argélia', image: 'https://flagcdn.com/16x12/dz.png', continent: 'África' },
+    { code: 'ar', name: 'Argentina', image: 'https://flagcdn.com/16x12/ar.png', continent: 'Américas' },
+    { code: 'am', name: 'Armênia', image: 'https://flagcdn.com/16x12/am.png', continent: 'Ásia' },
+    { code: 'aw', name: 'Aruba', image: 'https://flagcdn.com/16x12/aw.png', continent: 'Américas' },
+    { code: 'au', name: 'Austrália', image: 'https://flagcdn.com/16x12/au.png', continent: 'Oceania' },
+    { code: 'at', name: 'Áustria', image: 'https://flagcdn.com/16x12/at.png', continent: 'Europa' },
+    { code: 'az', name: 'Azerbaijão', image: 'https://flagcdn.com/16x12/az.png', continent: 'Ásia' },
+    { code: 'bs', name: 'Bahamas', image: 'https://flagcdn.com/16x12/bs.png', continent: 'Américas' },
+    { code: 'bh', name: 'Bahrein', image: 'https://flagcdn.com/16x12/bh.png', continent: 'Ásia' },
+    { code: 'bd', name: 'Bangladesh', image: 'https://flagcdn.com/16x12/bd.png', continent: 'Ásia' },
+    { code: 'bb', name: 'Barbados', image: 'https://flagcdn.com/16x12/bb.png', continent: 'Américas' },
+    { code: 'be', name: 'Bélgica', image: 'https://flagcdn.com/16x12/be.png', continent: 'Europa' },
+    { code: 'bz', name: 'Belize', image: 'https://flagcdn.com/16x12/bz.png', continent: 'Américas' },
+    { code: 'bj', name: 'Benin', image: 'https://flagcdn.com/16x12/bj.png', continent: 'África' },
+    { code: 'bm', name: 'Bermudas', image: 'https://flagcdn.com/16x12/bm.png', continent: 'Américas' },
+    { code: 'by', name: 'Bielorrússia', image: 'https://flagcdn.com/16x12/by.png', continent: 'Europa' },
+    { code: 'bo', name: 'Bolívia', image: 'https://flagcdn.com/16x12/bo.png', continent: 'Américas' },
+    { code: 'bq', name: 'Bonaire', image: 'https://flagcdn.com/16x12/bq.png', continent: 'Américas' },
+    { code: 'ba', name: 'Bósnia e Herzegovina', image: 'https://flagcdn.com/16x12/ba.png', continent: 'Europa' },
+    { code: 'bw', name: 'Botsuana', image: 'https://flagcdn.com/16x12/bw.png', continent: 'África' },
+    { code: 'br', name: 'Brasil', image: 'https://flagcdn.com/16x12/br.png', continent: 'Américas' },
+    { code: 'bn', name: 'Brunei', image: 'https://flagcdn.com/16x12/bn.png', continent: 'Ásia' },
+    { code: 'bg', name: 'Bulgária', image: 'https://flagcdn.com/16x12/bg.png', continent: 'Europa' },
+    { code: 'bf', name: 'Burkina Faso', image: 'https://flagcdn.com/16x12/bf.png', continent: 'África' },
+    { code: 'bi', name: 'Burundi', image: 'https://flagcdn.com/16x12/bi.png', continent: 'África' },
+    { code: 'bt', name: 'Butão', image: 'https://flagcdn.com/16x12/bt.png', continent: 'Ásia' },
+    { code: 'cv', name: 'Cabo Verde', image: 'https://flagcdn.com/16x12/cv.png', continent: 'África' },
+    { code: 'cm', name: 'Camarões', image: 'https://flagcdn.com/16x12/cm.png', continent: 'África' },
+    { code: 'kh', name: 'Camboja', image: 'https://flagcdn.com/16x12/kh.png', continent: 'Ásia' },
+    { code: 'ca', name: 'Canadá', image: 'https://flagcdn.com/16x12/ca.png', continent: 'Américas' },
+    { code: 'qa', name: 'Catar', image: 'https://flagcdn.com/16x12/qa.png', continent: 'Ásia' },
+    { code: 'kz', name: 'Cazaquistão', image: 'https://flagcdn.com/16x12/kz.png', continent: 'Ásia' },
+    { code: 'td', name: 'Chade', image: 'https://flagcdn.com/16x12/td.png', continent: 'África' },
+    { code: 'cl', name: 'Chile', image: 'https://flagcdn.com/16x12/cl.png', continent: 'Américas' },
+    { code: 'cn', name: 'China', image: 'https://flagcdn.com/16x12/cn.png', continent: 'Ásia' },
+    { code: 'cy', name: 'Chipre', image: 'https://flagcdn.com/16x12/cy.png', continent: 'Europa' },
+    { code: 'va', name: 'Cidade do Vaticano', image: 'https://flagcdn.com/16x12/va.png', continent: 'Europa' },
+    { code: 'sg', name: 'Singapura', image: 'https://flagcdn.com/16x12/sg.png', continent: 'Ásia' },
+    { code: 'co', name: 'Colômbia', image: 'https://flagcdn.com/16x12/co.png', continent: 'Américas' },
+    { code: 'km', name: 'Comores', image: 'https://flagcdn.com/16x12/km.png', continent: 'África' },
+    { code: 'cg', name: 'Congo', image: 'https://flagcdn.com/16x12/cg.png', continent: 'África' },
+    { code: 'cd', name: 'Congo (DRC)', image: 'https://flagcdn.com/16x12/cd.png', continent: 'África' },
+    { code: 'kp', name: 'Coreia do Norte', image: 'https://flagcdn.com/16x12/kp.png', continent: 'Ásia' },
+    { code: 'kr', name: 'Coreia do Sul', image: 'https://flagcdn.com/16x12/kr.png', continent: 'Ásia' },
+    { code: 'ci', name: 'Costa do Marfim', image: 'https://flagcdn.com/16x12/ci.png', continent: 'África' },
+    { code: 'cr', name: 'Costa Rica', image: 'https://flagcdn.com/16x12/cr.png', continent: 'Américas' },
+    { code: 'hr', name: 'Croácia', image: 'https://flagcdn.com/16x12/hr.png', continent: 'Europa' },
+    { code: 'cu', name: 'Cuba', image: 'https://flagcdn.com/16x12/cu.png', continent: 'Américas' },
+    { code: 'cw', name: 'Curaçao', image: 'https://flagcdn.com/16x12/cw.png', continent: 'Américas' },
+    { code: 'dk', name: 'Dinamarca', image: 'https://flagcdn.com/16x12/dk.png', continent: 'Europa' },
+    { code: 'dj', name: 'Djibuti', image: 'https://flagcdn.com/16x12/dj.png', continent: 'África' },
+    { code: 'dm', name: 'Dominica', image: 'https://flagcdn.com/16x12/dm.png', continent: 'Américas' },
+    { code: 'eg', name: 'Egito', image: 'https://flagcdn.com/16x12/eg.png', continent: 'África' },
+    { code: 'sv', name: 'El Salvador', image: 'https://flagcdn.com/16x12/sv.png', continent: 'Américas' },
+    { code: 'ae', name: 'Emirados Árabes Unidos', image: 'https://flagcdn.com/16x12/ae.png', continent: 'Ásia' },
+    { code: 'ec', name: 'Equador', image: 'https://flagcdn.com/16x12/ec.png', continent: 'Américas' },
+    { code: 'er', name: 'Eritreia', image: 'https://flagcdn.com/16x12/er.png', continent: 'África' },
+    { code: 'sk', name: 'Eslováquia', image: 'https://flagcdn.com/16x12/sk.png', continent: 'Europa' },
+    { code: 'si', name: 'Eslovênia', image: 'https://flagcdn.com/16x12/si.png', continent: 'Europa' },
+    { code: 'es', name: 'Espanha', image: 'https://flagcdn.com/16x12/es.png', continent: 'Europa' },
+    { code: 'us', name: 'Estados Unidos', image: 'https://flagcdn.com/16x12/us.png', continent: 'Américas' },
+    { code: 'ee', name: 'Estônia', image: 'https://flagcdn.com/16x12/ee.png', continent: 'Europa' },
+    { code: 'sz', name: 'Essuatíni', image: 'https://flagcdn.com/16x12/sz.png', continent: 'África' },
+    { code: 'et', name: 'Etiópia', image: 'https://flagcdn.com/16x12/et.png', continent: 'África' },
+    { code: 'fj', name: 'Fiji', image: 'https://flagcdn.com/16x12/fj.png', continent: 'Oceania' },
+    { code: 'ph', name: 'Filipinas', image: 'https://flagcdn.com/16x12/ph.png', continent: 'Ásia' },
+    { code: 'fi', name: 'Finlândia', image: 'https://flagcdn.com/16x12/fi.png', continent: 'Europa' },
+    { code: 'fr', name: 'França', image: 'https://flagcdn.com/16x12/fr.png', continent: 'Europa' },
+    { code: 'ga', name: 'Gabão', image: 'https://flagcdn.com/16x12/ga.png', continent: 'África' },
+    { code: 'gm', name: 'Gâmbia', image: 'https://flagcdn.com/16x12/gm.png', continent: 'África' },
+    { code: 'gh', name: 'Gana', image: 'https://flagcdn.com/16x12/gh.png', continent: 'África' },
+    { code: 'ge', name: 'Geórgia', image: 'https://flagcdn.com/16x12/ge.png', continent: 'Ásia' },
+	{ code: 'gs', name: 'Geórgia do Sul e Ilhas Sandwich do Sul', image: 'https://flagcdn.com/16x12/gs.png', continent: 'Antártida' },
+    { code: 'gi', name: 'Gibraltar', image: 'https://flagcdn.com/16x12/gi.png', continent: 'Europa' },
+    { code: 'gd', name: 'Granada', image: 'https://flagcdn.com/16x12/gd.png', continent: 'Américas' },
+    { code: 'gr', name: 'Grécia', image: 'https://flagcdn.com/16x12/gr.png', continent: 'Europa' },
+    { code: 'gl', name: 'Groenlândia', image: 'https://flagcdn.com/16x12/gl.png', continent: 'Américas' },
+    { code: 'gp', name: 'Guadalupe', image: 'https://flagcdn.com/16x12/gp.png', continent: 'Américas' },
+    { code: 'gu', name: 'Guam', image: 'https://flagcdn.com/16x12/gu.png', continent: 'Oceania' },
+    { code: 'gt', name: 'Guatemala', image: 'https://flagcdn.com/16x12/gt.png', continent: 'Américas' },
+    { code: 'gg', name: 'Guernsey', image: 'https://flagcdn.com/16x12/gg.png', continent: 'Europa' },
+    { code: 'gy', name: 'Guiana', image: 'https://flagcdn.com/16x12/gy.png', continent: 'Américas' },
+    { code: 'gf', name: 'Guiana Francesa', image: 'https://flagcdn.com/16x12/gf.png', continent: 'Américas' },
+    { code: 'gn', name: 'Guiné', image: 'https://flagcdn.com/16x12/gn.png', continent: 'África' },
+    { code: 'gw', name: 'Guiné-Bissau', image: 'https://flagcdn.com/16x12/gw.png', continent: 'África' },
+    { code: 'gq', name: 'Guiné Equatorial', image: 'https://flagcdn.com/16x12/gq.png', continent: 'África' },
+    { code: 'ht', name: 'Haiti', image: 'https://flagcdn.com/16x12/ht.png', continent: 'Américas' },
+    { code: 'nl', name: 'Holanda', image: 'https://flagcdn.com/16x12/nl.png', continent: 'Europa' },
+    { code: 'hn', name: 'Honduras', image: 'https://flagcdn.com/16x12/hn.png', continent: 'Américas' },
+    { code: 'hk', name: 'Hong Kong', image: 'https://flagcdn.com/16x12/hk.png', continent: 'Ásia' },
+    { code: 'hu', name: 'Hungria', image: 'https://flagcdn.com/16x12/hu.png', continent: 'Europa' },
+    { code: 'ye', name: 'Iêmen', image: 'https://flagcdn.com/16x12/ye.png', continent: 'Ásia' },
+	{ code: 'ax', name: 'Ilhas Åland', image: 'https://flagcdn.com/16x12/ax.png', continent: 'Europa' },
+    { code: 'bv', name: 'Ilha Bouvet', image: 'https://flagcdn.com/16x12/bv.png', continent: 'Antártida' },
+    { code: 'cx', name: 'Ilha Christmas', image: 'https://flagcdn.com/16x12/cx.png', continent: 'Oceania' },
+    { code: 'im', name: 'Ilha de Man', image: 'https://flagcdn.com/16x12/im.png', continent: 'Europa' },
+	{ code: 'hm', name: 'Ilhas Heard e McDonald', image: 'https://flagcdn.com/16x12/hm.png', continent: 'Antártida' },
+    { code: 'nf', name: 'Ilha Norfolk', image: 'https://flagcdn.com/16x12/nf.png', continent: 'Oceania' },
+    { code: 'ky', name: 'Ilhas Cayman', image: 'https://flagcdn.com/16x12/ky.png', continent: 'Américas' },
+    { code: 'cc', name: 'Ilhas Cocos (Keeling)', image: 'https://flagcdn.com/16x12/cc.png', continent: 'Oceania' },
+    { code: 'ck', name: 'Ilhas Cook', image: 'https://flagcdn.com/16x12/ck.png', continent: 'Oceania' },
+    { code: 'fo', name: 'Ilhas Faroe', image: 'https://flagcdn.com/16x12/fo.png', continent: 'Europa' },
+    { code: 'fk', name: 'Ilhas Malvinas', image: 'https://flagcdn.com/16x12/fk.png', continent: 'Américas' },
+    { code: 'mp', name: 'Ilhas Marianas do Norte', image: 'https://flagcdn.com/16x12/mp.png', continent: 'Oceania' },
+    { code: 'mh', name: 'Ilhas Marshall', image: 'https://flagcdn.com/16x12/mh.png', continent: 'Oceania' },
+    { code: 'um', name: 'Ilhas Menores dos EUA', image: 'https://flagcdn.com/16x12/um.png', continent: 'Oceania' },
+    { code: 'pn', name: 'Ilhas Pitcairn', image: 'https://flagcdn.com/16x12/pn.png', continent: 'Oceania' },
+    { code: 'sb', name: 'Ilhas Salomão', image: 'https://flagcdn.com/16x12/sb.png', continent: 'Oceania' },
+    { code: 'tc', name: 'Ilhas Turks e Caicos', image: 'https://flagcdn.com/16x12/tc.png', continent: 'Américas' },
+    { code: 'vg', name: 'Ilhas Virgens Britânicas', image: 'https://flagcdn.com/16x12/vg.png', continent: 'Américas' },
+    { code: 'vi', name: 'Ilhas Virgens Americanas', image: 'https://flagcdn.com/16x12/vi.png', continent: 'Américas' },
+    { code: 'in', name: 'Índia', image: 'https://flagcdn.com/16x12/in.png', continent: 'Ásia' },
+    { code: 'id', name: 'Indonésia', image: 'https://flagcdn.com/16x12/id.png', continent: 'Ásia' },
+    { code: 'ir', name: 'Irã', image: 'https://flagcdn.com/16x12/ir.png', continent: 'Ásia' },
+    { code: 'iq', name: 'Iraque', image: 'https://flagcdn.com/16x12/iq.png', continent: 'Ásia' },
+    { code: 'ie', name: 'Irlanda', image: 'https://flagcdn.com/16x12/ie.png', continent: 'Europa' },
+    { code: 'is', name: 'Islândia', image: 'https://flagcdn.com/16x12/is.png', continent: 'Europa' },
+    { code: 'il', name: 'Israel', image: 'https://flagcdn.com/16x12/il.png', continent: 'Ásia' },
+    { code: 'it', name: 'Itália', image: 'https://flagcdn.com/16x12/it.png', continent: 'Europa' },
+    { code: 'jm', name: 'Jamaica', image: 'https://flagcdn.com/16x12/jm.png', continent: 'Américas' },
+    { code: 'jp', name: 'Japão', image: 'https://flagcdn.com/16x12/jp.png', continent: 'Ásia' },
+    { code: 'je', name: 'Jersey', image: 'https://flagcdn.com/16x12/je.png', continent: 'Europa' },
+    { code: 'jo', name: 'Jordânia', image: 'https://flagcdn.com/16x12/jo.png', continent: 'Ásia' },
+    { code: 'ki', name: 'Kiribati', image: 'https://flagcdn.com/16x12/ki.png', continent: 'Oceania' },
+    { code: 'xk', name: 'Kosovo', image: 'https://flagcdn.com/16x12/xk.png', continent: 'Europa' },
+    { code: 'kw', name: 'Kuwait', image: 'https://flagcdn.com/16x12/kw.png', continent: 'Ásia' },
+    { code: 'la', name: 'Laos', image: 'https://flagcdn.com/16x12/la.png', continent: 'Ásia' },
+    { code: 'ls', name: 'Lesoto', image: 'https://flagcdn.com/16x12/ls.png', continent: 'África' },
+    { code: 'lv', name: 'Letônia', image: 'https://flagcdn.com/16x12/lv.png', continent: 'Europa' },
+    { code: 'lb', name: 'Líbano', image: 'https://flagcdn.com/16x12/lb.png', continent: 'Ásia' },
+    { code: 'lr', name: 'Libéria', image: 'https://flagcdn.com/16x12/lr.png', continent: 'África' },
+    { code: 'ly', name: 'Líbia', image: 'https://flagcdn.com/16x12/ly.png', continent: 'África' },
+    { code: 'li', name: 'Liechtenstein', image: 'https://flagcdn.com/16x12/li.png', continent: 'Europa' },
+    { code: 'lt', name: 'Lituânia', image: 'https://flagcdn.com/16x12/lt.png', continent: 'Europa' },
+    { code: 'lu', name: 'Luxemburgo', image: 'https://flagcdn.com/16x12/lu.png', continent: 'Europa' },
+    { code: 'mo', name: 'Macau', image: 'https://flagcdn.com/16x12/mo.png', continent: 'Ásia' },
+	{ code: 'mk', name: 'Macedônia do Norte', image: 'https://flagcdn.com/16x12/mk.png', continent: 'Europa' },
+    { code: 'mg', name: 'Madagascar', image: 'https://flagcdn.com/16x12/mg.png', continent: 'África' },
+    { code: 'my', name: 'Malásia', image: 'https://flagcdn.com/16x12/my.png', continent: 'Ásia' },
+    { code: 'mw', name: 'Malawi', image: 'https://flagcdn.com/16x12/mw.png', continent: 'África' },
+    { code: 'mv', name: 'Maldivas', image: 'https://flagcdn.com/16x12/mv.png', continent: 'Ásia' },
+    { code: 'ml', name: 'Mali', image: 'https://flagcdn.com/16x12/ml.png', continent: 'África' },
+    { code: 'mt', name: 'Malta', image: 'https://flagcdn.com/16x12/mt.png', continent: 'Europa' },
+    { code: 'ma', name: 'Marrocos', image: 'https://flagcdn.com/16x12/ma.png', continent: 'África' },
+    { code: 'mq', name: 'Martinica', image: 'https://flagcdn.com/16x12/mq.png', continent: 'Américas' },
+    { code: 'mu', name: 'Maurício', image: 'https://flagcdn.com/16x12/mu.png', continent: 'África' },
+    { code: 'mr', name: 'Mauritânia', image: 'https://flagcdn.com/16x12/mr.png', continent: 'África' },
+    { code: 'yt', name: 'Mayotte', image: 'https://flagcdn.com/16x12/yt.png', continent: 'África' },
+    { code: 'mx', name: 'México', image: 'https://flagcdn.com/16x12/mx.png', continent: 'Américas' },
+    { code: 'mm', name: 'Mianmar', image: 'https://flagcdn.com/16x12/mm.png', continent: 'Ásia' },
+    { code: 'fm', name: 'Micronésia', image: 'https://flagcdn.com/16x12/fm.png', continent: 'Oceania' },
+    { code: 'mz', name: 'Moçambique', image: 'https://flagcdn.com/16x12/mz.png', continent: 'África' },
+    { code: 'md', name: 'Moldávia', image: 'https://flagcdn.com/16x12/md.png', continent: 'Europa' },
+    { code: 'mc', name: 'Mônaco', image: 'https://flagcdn.com/16x12/mc.png', continent: 'Europa' },
+    { code: 'mn', name: 'Mongólia', image: 'https://flagcdn.com/16x12/mn.png', continent: 'Ásia' },
+    { code: 'me', name: 'Montenegro', image: 'https://flagcdn.com/16x12/me.png', continent: 'Europa' },
+    { code: 'ms', name: 'Montserrat', image: 'https://flagcdn.com/16x12/ms.png', continent: 'Américas' },
+    { code: 'na', name: 'Namíbia', image: 'https://flagcdn.com/16x12/na.png', continent: 'África' },
+    { code: 'nr', name: 'Nauru', image: 'https://flagcdn.com/16x12/nr.png', continent: 'Oceania' },
+    { code: 'np', name: 'Nepal', image: 'https://flagcdn.com/16x12/np.png', continent: 'Ásia' },
+    { code: 'ni', name: 'Nicarágua', image: 'https://flagcdn.com/16x12/ni.png', continent: 'Américas' },
+    { code: 'ne', name: 'Níger', image: 'https://flagcdn.com/16x12/ne.png', continent: 'África' },
+    { code: 'ng', name: 'Nigéria', image: 'https://flagcdn.com/16x12/ng.png', continent: 'África' },
+    { code: 'nu', name: 'Niue', image: 'https://flagcdn.com/16x12/nu.png', continent: 'Oceania' },
+    { code: 'no', name: 'Noruega', image: 'https://flagcdn.com/16x12/no.png', continent: 'Europa' },
+    { code: 'nc', name: 'Nova Caledônia', image: 'https://flagcdn.com/16x12/nc.png', continent: 'Oceania' },
+    { code: 'nz', name: 'Nova Zelândia', image: 'https://flagcdn.com/16x12/nz.png', continent: 'Oceania' },
+    { code: 'om', name: 'Omã', image: 'https://flagcdn.com/16x12/om.png', continent: 'Ásia' },
+    { code: 'pw', name: 'Palau', image: 'https://flagcdn.com/16x12/pw.png', continent: 'Oceania' },
+    { code: 'ps', name: 'Palestina', image: 'https://flagcdn.com/16x12/ps.png', continent: 'Ásia' },
+    { code: 'pa', name: 'Panamá', image: 'https://flagcdn.com/16x12/pa.png', continent: 'Américas' },
+    { code: 'pg', name: 'Papua-Nova Guiné', image: 'https://flagcdn.com/16x12/pg.png', continent: 'Oceania' },
+    { code: 'pk', name: 'Paquistão', image: 'https://flagcdn.com/16x12/pk.png', continent: 'Ásia' },
+    { code: 'py', name: 'Paraguai', image: 'https://flagcdn.com/16x12/py.png', continent: 'Américas' },
+    { code: 'pe', name: 'Peru', image: 'https://flagcdn.com/16x12/pe.png', continent: 'Américas' },
+    { code: 'pf', name: 'Polinésia Francesa', image: 'https://flagcdn.com/16x12/pf.png', continent: 'Oceania' },
+    { code: 'pl', name: 'Polônia', image: 'https://flagcdn.com/16x12/pl.png', continent: 'Europa' },
+    { code: 'pr', name: 'Porto Rico', image: 'https://flagcdn.com/16x12/pr.png', continent: 'Américas' },
+    { code: 'pt', name: 'Portugal', image: 'https://flagcdn.com/16x12/pt.png', continent: 'Europa' },
+    { code: 'ke', name: 'Quênia', image: 'https://flagcdn.com/16x12/ke.png', continent: 'África' },
+    { code: 'kg', name: 'Quirguistão', image: 'https://flagcdn.com/16x12/kg.png', continent: 'Ásia' },
+    { code: 'gb', name: 'Reino Unido', image: 'https://flagcdn.com/16x12/gb.png', continent: 'Europa' },
+    { code: 'cf', name: 'República Centro-Africana', image: 'https://flagcdn.com/16x12/cf.png', continent: 'África' },
+    { code: 'do', name: 'República Dominicana', image: 'https://flagcdn.com/16x12/do.png', continent: 'Américas' },
+    { code: 'cz', name: 'República Tcheca', image: 'https://flagcdn.com/16x12/cz.png', continent: 'Europa' },
+    { code: 're', name: 'Reunião', image: 'https://flagcdn.com/16x12/re.png', continent: 'África' },
+    { code: 'ro', name: 'Romênia', image: 'https://flagcdn.com/16x12/ro.png', continent: 'Europa' },
+    { code: 'rw', name: 'Ruanda', image: 'https://flagcdn.com/16x12/rw.png', continent: 'África' },
+    { code: 'ru', name: 'Rússia', image: 'https://flagcdn.com/16x12/ru.png', continent: 'Europa' },
+    { code: 'eh', name: 'Saara Ocidental', image: 'https://flagcdn.com/16x12/eh.png', continent: 'África' },
+    { code: 'pm', name: 'Saint Pierre e Miquelon', image: 'https://flagcdn.com/16x12/pm.png', continent: 'Américas' },
+    { code: 'ws', name: 'Samoa', image: 'https://flagcdn.com/16x12/ws.png', continent: 'Oceania' },
+    { code: 'as', name: 'Samoa Americana', image: 'https://flagcdn.com/16x12/as.png', continent: 'Oceania' },
+    { code: 'sm', name: 'San Marino', image: 'https://flagcdn.com/16x12/sm.png', continent: 'Europa' },
+    { code: 'sh', name: 'Santa Helena', image: 'https://flagcdn.com/16x12/sh.png', continent: 'África' },
+    { code: 'lc', name: 'Santa Lúcia', image: 'https://flagcdn.com/16x12/lc.png', continent: 'Américas' },
+    { code: 'bl', name: 'São Bartolomeu', image: 'https://flagcdn.com/16x12/bl.png', continent: 'Américas' },
+    { code: 'kn', name: 'São Cristóvão e Nevis', image: 'https://flagcdn.com/16x12/kn.png', continent: 'Américas' },
+    { code: 'mf', name: 'São Martinho', image: 'https://flagcdn.com/16x12/mf.png', continent: 'Américas' },
+	{ code: 'sx', name: 'Sint Maarten', image: 'https://flagcdn.com/16x12/sx.png', continent: 'Américas' },
+    { code: 'st', name: 'São Tomé e Príncipe', image: 'https://flagcdn.com/16x12/st.png', continent: 'África' },
+    { code: 'vc', name: 'São Vicente e Granadinas', image: 'https://flagcdn.com/16x12/vc.png', continent: 'Américas' },
+    { code: 'sc', name: 'Seicheles', image: 'https://flagcdn.com/16x12/sc.png', continent: 'África' },
+    { code: 'sn', name: 'Senegal', image: 'https://flagcdn.com/16x12/sn.png', continent: 'África' },
+    { code: 'sl', name: 'Serra Leoa', image: 'https://flagcdn.com/16x12/sl.png', continent: 'África' },
+    { code: 'rs', name: 'Sérvia', image: 'https://flagcdn.com/16x12/rs.png', continent: 'Europa' },
+    { code: 'sy', name: 'Síria', image: 'https://flagcdn.com/16x12/sy.png', continent: 'Ásia' },
+    { code: 'so', name: 'Somália', image: 'https://flagcdn.com/16x12/so.png', continent: 'África' },
+    { code: 'lk', name: 'Sri Lanka', image: 'https://flagcdn.com/16x12/lk.png', continent: 'Ásia' },
+    { code: 'sd', name: 'Sudão', image: 'https://flagcdn.com/16x12/sd.png', continent: 'África' },
+    { code: 'ss', name: 'Sudão do Sul', image: 'https://flagcdn.com/16x12/ss.png', continent: 'África' },
+    { code: 'se', name: 'Suécia', image: 'https://flagcdn.com/16x12/se.png', continent: 'Europa' },
+    { code: 'ch', name: 'Suíça', image: 'https://flagcdn.com/16x12/ch.png', continent: 'Europa' },
+    { code: 'sr', name: 'Suriname', image: 'https://flagcdn.com/16x12/sr.png', continent: 'Américas' },
+    { code: 'sj', name: 'Svalbard e Jan Mayen', image: 'https://flagcdn.com/16x12/sj.png', continent: 'Europa' },
+    { code: 'th', name: 'Tailândia', image: 'https://flagcdn.com/16x12/th.png', continent: 'Ásia' },
+    { code: 'tw', name: 'Taiwan', image: 'https://flagcdn.com/16x12/tw.png', continent: 'Ásia' },
+    { code: 'tj', name: 'Tajiquistão', image: 'https://flagcdn.com/16x12/tj.png', continent: 'Ásia' },
+    { code: 'tz', name: 'Tanzânia', image: 'https://flagcdn.com/16x12/tz.png', continent: 'África' },
+    { code: 'io', name: 'Território Britânico do Índico', image: 'https://flagcdn.com/16x12/io.png', continent: 'Ásia' },
+    { code: 'tf', name: 'Territórios Franceses do Sul', image: 'https://flagcdn.com/16x12/tf.png', continent: 'Antártida' },
+    { code: 'tl', name: 'Timor-Leste', image: 'https://flagcdn.com/16x12/tl.png', continent: 'Ásia' },
+    { code: 'tg', name: 'Togo', image: 'https://flagcdn.com/16x12/tg.png', continent: 'África' },
+    { code: 'tk', name: 'Tokelau', image: 'https://flagcdn.com/16x12/tk.png', continent: 'Oceania' },
+    { code: 'to', name: 'Tonga', image: 'https://flagcdn.com/16x12/to.png', continent: 'Oceania' },
+    { code: 'tt', name: 'Trinidad e Tobago', image: 'https://flagcdn.com/16x12/tt.png', continent: 'Américas' },
+    { code: 'tn', name: 'Tunísia', image: 'https://flagcdn.com/16x12/tn.png', continent: 'África' },
+    { code: 'tm', name: 'Turcomenistão', image: 'https://flagcdn.com/16x12/tm.png', continent: 'Ásia' },
+    { code: 'tr', name: 'Turquia', image: 'https://flagcdn.com/16x12/tr.png', continent: 'Ásia' },
+    { code: 'tv', name: 'Tuvalu', image: 'https://flagcdn.com/16x12/tv.png', continent: 'Oceania' },
+    { code: 'ua', name: 'Ucrânia', image: 'https://flagcdn.com/16x12/ua.png', continent: 'Europa' },
+    { code: 'ug', name: 'Uganda', image: 'https://flagcdn.com/16x12/ug.png', continent: 'África' },
+    { code: 'uy', name: 'Uruguai', image: 'https://flagcdn.com/16x12/uy.png', continent: 'Américas' },
+    { code: 'uz', name: 'Uzbequistão', image: 'https://flagcdn.com/16x12/uz.png', continent: 'Ásia' },
+    { code: 'vu', name: 'Vanuatu', image: 'https://flagcdn.com/16x12/vu.png', continent: 'Oceania' },
+    { code: 've', name: 'Venezuela', image: 'https://flagcdn.com/16x12/ve.png', continent: 'Américas' },
+    { code: 'vn', name: 'Vietnã', image: 'https://flagcdn.com/16x12/vn.png', continent: 'Ásia' },
+    { code: 'wf', name: 'Wallis e Futuna', image: 'https://flagcdn.com/16x12/wf.png', continent: 'Oceania' },
+    { code: 'zm', name: 'Zâmbia', image: 'https://flagcdn.com/16x12/zm.png', continent: 'África' },
+    { code: 'zw', name: 'Zimbábue', image: 'https://flagcdn.com/16x12/zw.png', continent: 'África' },
+];
+
+        // Lista de exclusão de conflitos (manipulável)
+        const conflictPairs = [
+            ['Rússia', 'Ucrânia'],
+            ['Israel', 'Irã'],
+            ['Israel', 'Síria'],
+            ['Índia', 'Paquistão'],
+        ];
+
+        // --- VARIÁVEIS DE ESTADO DA APLICAÇÃO ---
+        let currentUser = null;
+        let userProfile = null;
+        let currentVoteCount = 0;
+        const maxVotesPerSession = 20;
+        let currentPair = [];
+        let allFlagsData = [];
+        const auth = getAuth(app);
+        
+
+        // --- ELEMENTOS DA UI ---
+        const ui = {
+            loadingSection: document.getElementById('loading-section'),
+            demographicSection: document.getElementById('demographic-section'),
+            votingSection: document.getElementById('voting-section'),
+            resultsSection: document.getElementById('results-section'),
+            demographicForm: document.getElementById('demographic-form'),
+            countrySelect: document.getElementById('country'),
+            flagPairContainer: document.getElementById('flag-pair-container'),
+            flag1: {
+                container: document.getElementById('flag1-container'),
+                img: document.getElementById('flag1-img'),
+                name: document.getElementById('flag1-name'),
+            },
+            flag2: {
+                container: document.getElementById('flag2-container'),
+                img: document.getElementById('flag2-img'),
+                name: document.getElementById('flag2-name'),
+            },
+            voteCounter: document.getElementById('vote-counter'),
+            rankingModal: document.getElementById('ranking-modal'),
+            rankingTableBody: document.getElementById('ranking-table-body'),
+            closeModalBtn: document.getElementById('close-modal-btn'),
+            continentFilter: document.getElementById('continent-filter'),
+            viewFullResultsBtn: document.getElementById('view-full-results-btn'),
+            showResultsBtnDuringVote: document.getElementById('show-results-btn-during-vote'),
+            voteAgainBtn: document.getElementById('vote-again-btn'),
+        };
+
+        // --- LÓGICA PRINCIPAL ---
+
+        // Função para inicializar o banco de dados se estiver vazio
+        async function initializeDatabase() {
+            const flagsCollectionRef = collection(db, `artifacts/${appId}/public/data/flags`);
+            const snapshot = await getDocs(query(flagsCollectionRef, limit(1)));
+            if (snapshot.empty) {
+                console.log("Banco de dados de bandeiras vazio. Inicializando...");
+                const batch = writeBatch(db);
+                countries.forEach(country => {
+                    const flagRef = doc(flagsCollectionRef, country.code);
+                    batch.set(flagRef, {
+                        name: country.name,
+                        code: country.code,
+                        continent: country.continent,
+                        elo: 1500,
+                        appearances: 0,
+                    });
+                });
+                await batch.commit();
+                console.log("Banco de dados inicializado com sucesso.");
+            }
+        }
+        
+        // Carrega todos os dados das bandeiras para a memória
+        async function loadAllFlagsData() {
+            const flagsCollectionRef = collection(db, `artifacts/${appId}/public/data/flags`);
+            const snapshot = await getDocs(flagsCollectionRef);
+            allFlagsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        // Preenche o seletor de países
+        function populateCountrySelect() {
+            countries.sort((a, b) => a.name.localeCompare(b.name)).forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.name;
+                option.textContent = country.name;
+                ui.countrySelect.appendChild(option);
+            });
+        }
+
+        // Lógica de autenticação
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const userRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile`, 'data');
+                const userDoc = await getDoc(userRef);
+                if (userDoc.exists()) {
+                    userProfile = userDoc.data();
+                    showScreen('voting');
+                    startNewSession();
+                } else {
+                    showScreen('demographic');
+                }
+            } else {
+                // Tenta login com token customizado, se não, anônimo
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                         await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                         await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Erro na autenticação:", error);
+                    ui.loadingSection.innerHTML = '<p class="text-red-500">Erro ao conectar. Por favor, recarregue a página.</p>';
+                }
+            }
+        });
+
+        // Manipula o envio do formulário demográfico
+        ui.demographicForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(ui.demographicForm);
+            userProfile = {
+                country: formData.get('country'),
+                birthYear: formData.get('birthYear') || null,
+                gender: formData.get('gender'),
+            };
+            
+            const userRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/profile`, 'data');
+            await setDoc(userRef, userProfile);
+            
+            showScreen('voting');
+            startNewSession();
+        });
+
+        // Algoritmo de seleção de pares
+        function getFlagPair() {
+            // 1. Garante que cada bandeira apareça um número similar de vezes
+            const sortedFlags = [...allFlagsData].sort((a, b) => a.appearances - b.appearances);
+            const candidates = sortedFlags.slice(0, 40); // Pega as 40 menos vistas
+
+            let flag1, flag2;
+            let attempts = 0;
+            const maxAttempts = 100;
+
+            while (attempts < maxAttempts) {
+                attempts++;
+                // Pega dois candidatos aleatórios
+                flag1 = candidates[Math.floor(Math.random() * candidates.length)];
+                flag2 = candidates[Math.floor(Math.random() * candidates.length)];
+
+                // Validações
+                if (flag1.id === flag2.id) continue; // Não pode ser o mesmo país
+
+                // 2. Evita pares com histórico de conflito
+                const isConflict = conflictPairs.some(pair => 
+                    (pair[0] === flag1.name && pair[1] === flag2.name) ||
+                    (pair[1] === flag1.name && pair[0] === flag2.name)
+                );
+                if (isConflict) continue;
+
+                // 3. Prioriza pares de continentes diferentes
+                if (flag1.continent !== flag2.continent || attempts > maxAttempts / 2) {
+                    return [flag1, flag2];
+                }
+            }
+            // Fallback: se não encontrar um par ideal, retorna qualquer par válido
+            return [flag1, flag2];
+        }
+
+        // Inicia uma nova sessão de votação
+        function startNewSession() {
+            currentVoteCount = 0;
+            ui.resultsSection.classList.add('hidden');
+            ui.votingSection.classList.remove('hidden');
+            loadNextPair();
+        }
+
+        // Carrega o próximo par de bandeiras
+        function loadNextPair() {
+            if (currentVoteCount >= maxVotesPerSession) {
+                showScreen('results');
+                return;
+            }
+            currentVoteCount++;
+            ui.voteCounter.textContent = `Voto ${currentVoteCount} de ${maxVotesPerSession}`;
+            
+            ui.flagPairContainer.classList.add('disabled-flag');
+            currentPair = getFlagPair();
+            
+            const [flag1, flag2] = Math.random() > 0.5 ? [currentPair[0], currentPair[1]] : [currentPair[1], currentPair[0]];
+
+            ui.flag1.img.src = `https://flagcdn.com/w320/${flag1.id}.png`;
+            ui.flag1.img.alt = `Bandeira de ${flag1.name}`;
+            ui.flag1.name.textContent = flag1.name;
+            ui.flag1.container.dataset.flagId = flag1.id;
+
+            ui.flag2.img.src = `https://flagcdn.com/w320/${flag2.id}.png`;
+            ui.flag2.img.alt = `Bandeira de ${flag2.name}`;
+            ui.flag2.name.textContent = flag2.name;
+            ui.flag2.container.dataset.flagId = flag2.id;
+            
+            ui.flagPairContainer.classList.remove('disabled-flag');
+        }
+
+        // Manipula o clique em uma bandeira
+        async function handleVote(e) {
+            const chosenContainer = e.target.closest('.flag-container');
+            if (!chosenContainer || ui.flagPairContainer.classList.contains('disabled-flag')) return;
+
+            ui.flagPairContainer.classList.add('disabled-flag');
+
+            const winnerId = chosenContainer.dataset.flagId;
+            const loserId = (winnerId === currentPair[0].id) ? currentPair[1].id : currentPair[0].id;
+
+            const winner = allFlagsData.find(f => f.id === winnerId);
+            const loser = allFlagsData.find(f => f.id === loserId);
+
+            // Cálculo do Elo
+            const eloK = 32; // Fator K base
+            const expectedWinner = 1 / (1 + Math.pow(10, (loser.elo - winner.elo) / 400));
+            const expectedLoser = 1 - expectedWinner;
+
+            let kWinner = eloK;
+            let kLoser = eloK;
+
+            // Ajuste do Fator K baseado no viés nacional
+            if (userProfile.country === winner.name) {
+                kWinner = 8; // Voto nacionalista tem menos impacto
+            } else if (userProfile.country === loser.name) {
+                kWinner = 40; // Voto "antinacionalista" tem mais impacto
+                kLoser = 40;
+            }
+
+            const newWinnerElo = winner.elo + kWinner * (1 - expectedWinner);
+            const newLoserElo = loser.elo + kLoser * (0 - expectedLoser);
+
+            // Atualiza os dados locais primeiro para resposta rápida da UI
+            winner.elo = newWinnerElo;
+            loser.elo = newLoserElo;
+            winner.appearances++;
+            loser.appearances++;
+
+            // Atualiza no Firestore em lote
+            const batch = writeBatch(db);
+            const winnerRef = doc(db, `artifacts/${appId}/public/data/flags`, winnerId);
+            const loserRef = doc(db, `artifacts/${appId}/public/data/flags`, loserId);
+            
+            batch.update(winnerRef, { elo: newWinnerElo, appearances: winner.appearances });
+            batch.update(loserRef, { elo: newLoserElo, appearances: loser.appearances });
+            
+            await batch.commit();
+
+            // Carrega o próximo par
+            setTimeout(loadNextPair, 300);
+        }
+
+        ui.flag1.container.addEventListener('click', handleVote);
+        ui.flag2.container.addEventListener('click', handleVote);
+
+        // Lógica para mostrar/esconder o modal de ranking
+        async function showRankingModal() {
+            await displayRankings();
+            ui.rankingModal.classList.remove('hidden');
+        }
+
+        function hideRankingModal() {
+            ui.rankingModal.classList.add('hidden');
+        }
+        
+        // Exibe os rankings na tabela
+        async function displayRankings() {
+            const selectedContinent = ui.continentFilter.value;
+            
+            // Re-busca os dados para garantir que estão atualizados
+            await loadAllFlagsData();
+
+            const filteredFlags = allFlagsData.filter(flag => 
+                selectedContinent === 'Todos' || flag.continent === selectedContinent
+            );
+
+            filteredFlags.sort((a, b) => b.elo - a.elo);
+
+            ui.rankingTableBody.innerHTML = '';
+            if (filteredFlags.length === 0) {
+                ui.rankingTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">Nenhuma bandeira encontrada para este filtro.</td></tr>';
+                return;
+            }
+
+            filteredFlags.forEach((flag, index) => {
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="p-3 font-bold">${index + 1}</td>
+                    <td class="p-3"><img src="https://flagcdn.com/w40/${flag.id}.png" alt="Bandeira de ${flag.name}" class="h-6 rounded"></td>
+                    <td class="p-3">${flag.name}</td>
+                    <td class="p-3 font-semibold">${Math.round(flag.elo)}</td>
+                `;
+                ui.rankingTableBody.appendChild(row);
+            });
+        }
+        
+        ui.continentFilter.addEventListener('change', displayRankings);
+        ui.closeModalBtn.addEventListener('click', hideRankingModal);
+        ui.viewFullResultsBtn.addEventListener('click', showRankingModal);
+        ui.showResultsBtnDuringVote.addEventListener('click', showRankingModal);
+
+        // Botão para votar novamente
+        ui.voteAgainBtn.addEventListener('click', () => {
+            showScreen('voting');
+            startNewSession();
+        });
+
+        // Gerenciador de telas
+        function showScreen(screenName) {
+            ui.loadingSection.classList.add('hidden');
+            ui.demographicSection.classList.add('hidden');
+            ui.votingSection.classList.add('hidden');
+            ui.resultsSection.classList.add('hidden');
+
+            if (screenName === 'loading') ui.loadingSection.classList.remove('hidden');
+            if (screenName === 'demographic') ui.demographicSection.classList.remove('hidden');
+            if (screenName === 'voting') ui.votingSection.classList.remove('hidden');
+            if (screenName === 'results') ui.resultsSection.classList.remove('hidden');
+        }
+
+        // Função de inicialização da aplicação
+        async function main() {
+            showScreen('loading');
+            populateCountrySelect();
+            await initializeDatabase();
+            await loadAllFlagsData();
+            // A autenticação irá direcionar para a tela correta
+        }
+
+        // Inicia a aplicação
+        main();
